@@ -17,19 +17,44 @@ Then, start to add functions in the server code that actually 'run' the game in 
 """
 
 import socket
+import sys
 from time import sleep
+
+
+moves_dict = {"EVEN" : "EVEN", "ODD" : "ODD", "DOUBLE" : "DOUB", "CONTAINS" : "CON"}
+
+def parse_move(move, p_id):
+    try:
+        movelist = move.split()
+        movemsg = moves_dict[movelist[0]]
+        if(movemsg == moves_dict["CONTAINS"] and len(movelist) == 2):
+            movemsg = movemsg + "," + movelist[1]
+        elif(movemsg == moves_dict["CONTAINS"]):
+            raise KeyError
+        return str(p_id)+",MOV,"+movemsg
+    except KeyError:
+        print(move + " is an invalid move.")
+        move_redo = input("Redo your move again!\n")
+        return parse_move(move_redo, p_id)
+
+
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Connect the socket to the port where the server is listening
-server_address = ('localhost', 4444)
-print ('connecting to %s port %s' % server_address)
-sock.connect(server_address)
+server_str = input("input the server address\nuse the format [IP]:[PORT]\n").split(':')
+try:
+    server_address = (server_str[0], int(server_str[1]))
+    print ('connecting to %s port %s' % server_address)
+    sock.connect(server_address)
+except:
+    print(server_str + " is not a valid string!\nExiting now.")
+    exit()
 
 count=0
 message = 'INIT'.encode()
 sock.sendall(message)
-id = 0
+player_id = 0
 try:
     while True:
 
@@ -46,8 +71,9 @@ try:
             print("Received " + mess)
             if "WELCOME" in mess:
                 print("The games have begun")
-                id = int(mess.split(',')[-1])
-            mess = str(id) + ',MOV,CON,1'
+                player_id = int(mess.split(',')[-1])
+            move = input("What is your prediction of the dice roll?\nWill it be EVEN, ODD, DOUBLE or CONTAINS [Number 1-6]?\n")
+            mess = parse_move(move,player_id)
             print("Sent " + mess)
             sock.sendall(mess.encode()) # Client has ID 231
         if exit:

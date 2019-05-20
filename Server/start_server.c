@@ -87,6 +87,7 @@ int send_message( void ) {
         fprintf(stderr,"Client write failed\n");
         exit(EXIT_FAILURE);
     }
+    p.lives = INITIAL_LIVES;
     return 0;
   } else {
     play_game_round();
@@ -101,6 +102,7 @@ int send_message( void ) {
           sprintf(buf, PASS, p.id);
         } else {
           sprintf(buf, FAIL, p.id);
+	  p.lives = p.lives - 1;
         }
         break;
 
@@ -110,6 +112,7 @@ int send_message( void ) {
           sprintf(buf, PASS, p.id);
         } else {
           sprintf(buf, FAIL, p.id);
+	  p.lives = p.lives - 1;
         }
 
       case DOUB:
@@ -117,6 +120,7 @@ int send_message( void ) {
           sprintf(buf, PASS, p.id);
         } else {
           sprintf(buf, FAIL, p.id);
+	  p.lives = p.lives - 1;
         }
 
       case CON:
@@ -124,9 +128,16 @@ int send_message( void ) {
           sprintf(buf, PASS, p.id);
         } else {
           sprintf(buf, FAIL, p.id);
+	  p.lives = p.lives - 1;
         }
     }
-    err = send(p.id, buf, strlen(buf), 0);
+    if(p.lives <= 0){
+	buf = calloc(BUFFER_SIZE, sizeof(char));
+	sprintf(buf,ELIM,p.id);
+	err = send(p.id, buf, strlen(buf), 0);
+    } else {
+    	err = send(p.id, buf, strlen(buf), 0);
+    }
     if (err < 0){
         fprintf(stderr,"Client write failed\n");
         exit(EXIT_FAILURE);
